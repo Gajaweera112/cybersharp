@@ -48,16 +48,17 @@
 /* Corner brackets */
 .ls-corner {
   position: absolute;
-  width: 28px;
-  height: 28px;
-  border-color: rgba(0, 200, 230, 0.5);
+  width: 36px;
+  height: 36px;
+  border-color: #ffe600;
   border-style: solid;
   z-index: 2;
+  box-shadow: 0 0 14px rgba(255, 230, 0, 0.7), inset 0 0 8px rgba(255, 230, 0, 0.2);
 }
-.ls-tl { top: 18px; left: 18px; border-width: 2px 0 0 2px; }
-.ls-tr { top: 18px; right: 18px; border-width: 2px 2px 0 0; }
-.ls-bl { bottom: 18px; left: 18px; border-width: 0 0 2px 2px; }
-.ls-br { bottom: 18px; right: 18px; border-width: 0 2px 2px 0; }
+.ls-tl { top: 16px; left: 16px; border-width: 3px 0 0 3px; }
+.ls-tr { top: 16px; right: 16px; border-width: 3px 3px 0 0; }
+.ls-bl { bottom: 16px; left: 16px; border-width: 0 0 3px 3px; }
+.ls-br { bottom: 16px; right: 16px; border-width: 0 3px 3px 0; }
 
 /* Top label */
 .ls-top-label {
@@ -94,15 +95,22 @@
   text-transform: uppercase;
   margin: 0;
   text-shadow:
-    0 0 12px rgba(0, 230, 255, 0.9),
-    0 0 30px rgba(0, 230, 255, 0.6),
-    0 0 60px rgba(0, 230, 255, 0.35),
-    0 0 100px rgba(0, 200, 255, 0.2);
+    0 0 10px #00f5ff,
+    0 0 20px #00f5ff,
+    0 0 40px #00f5ff,
+    0 0 80px rgba(0, 245, 255, 0.5),
+    0 0 120px rgba(0, 200, 255, 0.3);
+  animation: lsTitlePulse 2s ease-in-out infinite;
 }
 
-/* Glitch effect */
-.ls-glitch .ls-title::before,
-.ls-glitch .ls-title::after {
+@keyframes lsTitlePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.88; }
+}
+
+/* Always-on ghost glitch layers — subtle at rest */
+.ls-title::before,
+.ls-title::after {
   content: attr(data-text);
   position: absolute;
   top: 0;
@@ -112,16 +120,44 @@
   font-size: inherit;
   font-weight: 900;
   letter-spacing: inherit;
+  pointer-events: none;
 }
+.ls-title::before {
+  color: rgba(255, 0, 80, 0.35);
+  animation: lsGhostRed 0.35s infinite;
+}
+.ls-title::after {
+  color: rgba(0, 255, 180, 0.3);
+  animation: lsGhostCyan 0.45s infinite;
+}
+
+@keyframes lsGhostRed {
+  0%, 100% { transform: translate(0, 0);          clip-path: inset(0 0 85% 0); }
+  33%       { transform: translate(-3px, 2px);     clip-path: inset(20% 0 60% 0); }
+  66%       { transform: translate(2px, -1px);     clip-path: inset(60% 0 10% 0); }
+}
+@keyframes lsGhostCyan {
+  0%, 100% { transform: translate(0, 0);          clip-path: inset(70% 0 0 0); }
+  33%       { transform: translate(3px, -2px);     clip-path: inset(30% 0 50% 0); }
+  66%       { transform: translate(-2px, 1px);     clip-path: inset(5% 0 75% 0); }
+}
+
+/* Amplify glitch layers when active */
 .ls-glitch .ls-title::before {
-  color: rgba(255, 0, 80, 0.75);
-  clip: rect(0, 900px, 30px, 0);
-  transform: translate(-3px, 2px);
+  color: rgba(255, 0, 80, 0.85);
+  animation: lsGhostRedBig 0.1s infinite;
 }
 .ls-glitch .ls-title::after {
-  color: rgba(0, 255, 220, 0.65);
-  clip: rect(40px, 900px, 80px, 0);
-  transform: translate(3px, -2px);
+  color: rgba(0, 255, 180, 0.8);
+  animation: lsGhostCyanBig 0.1s infinite;
+}
+@keyframes lsGhostRedBig {
+  0%, 100% { transform: translate(-4px, 2px);  clip-path: inset(0 0 70% 0); }
+  50%       { transform: translate(4px, -2px); clip-path: inset(40% 0 20% 0); }
+}
+@keyframes lsGhostCyanBig {
+  0%, 100% { transform: translate(4px, -2px);  clip-path: inset(50% 0 10% 0); }
+  50%       { transform: translate(-3px, 2px); clip-path: inset(10% 0 60% 0); }
 }
 
 /* Subtitle */
@@ -129,10 +165,13 @@
   font-family: 'Rajdhani', sans-serif;
   font-size: clamp(0.9rem, 2.5vw, 1.4rem);
   font-weight: 700;
-  color: #00e8ff;
+  color: #ffe600;
   letter-spacing: 0.55em;
   text-transform: uppercase;
-  text-shadow: 0 0 18px rgba(0, 232, 255, 0.7);
+  text-shadow:
+    0 0 10px rgba(255, 230, 0, 0.9),
+    0 0 25px rgba(255, 230, 0, 0.6),
+    0 0 50px rgba(255, 200, 0, 0.3);
   margin-top: 8px;
 }
 
@@ -208,17 +247,36 @@
 
 .ls-bar-track {
   flex: 1;
-  height: 6px;
+  height: 8px;
   background: rgba(0, 180, 210, 0.12);
-  border: 1px solid rgba(0, 180, 210, 0.25);
+  border: 1px solid rgba(0, 245, 255, 0.3);
   overflow: hidden;
+  position: relative;
 }
 
 .ls-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, #007fa8 0%, #00d8f5 60%, #a0f8ff 100%);
-  box-shadow: 0 0 10px rgba(0, 216, 245, 0.7), 0 0 20px rgba(0, 180, 220, 0.4);
+  box-shadow: 0 0 12px rgba(0, 245, 255, 0.9), 0 0 24px rgba(0, 180, 220, 0.5);
   transition: width 0.35s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ls-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7));
+  animation: lsBarShine 1.8s linear infinite;
+}
+
+@keyframes lsBarShine {
+  0%   { transform: translateX(-80px); }
+  100% { transform: translateX(80px); }
 }
 
 .ls-pct {
