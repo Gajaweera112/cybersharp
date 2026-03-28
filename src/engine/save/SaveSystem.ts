@@ -1,48 +1,25 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PlayerStats } from '../rpg/RPGSystem';
-import { vec3 } from 'gl-matrix';
+import { storageAdapter } from '../../storage/IndexedDBAdapter';
 
 export class SaveSystem {
-  private supabase: SupabaseClient | null = null;
   private currentSaveSlot: number = 1;
 
   constructor() {
-    this.initializeSupabase();
+    this.initialize();
   }
 
-  private initializeSupabase() {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (supabaseUrl && supabaseKey) {
-      this.supabase = createClient(supabaseUrl, supabaseKey);
-      console.log('Supabase initialized for save system');
-    } else {
-      console.warn('Supabase not configured, using localStorage only');
-    }
+  private async initialize() {
+    await storageAdapter.initialize();
+    console.log('Save system initialized with local storage');
   }
 
   async saveGame(saveData: SaveData): Promise<boolean> {
-    const saveKey = `cybersharp-save-${this.currentSaveSlot}`;
-
     try {
-      localStorage.setItem(saveKey, JSON.stringify(saveData));
+      await storageAdapter.saveSave(this.currentSaveSlot, saveData);
 
-      if (this.supabase) {
-        const { error } = await this.supabase
-          .from('saves')
-          .upsert({
-            slot: this.currentSaveSlot,
-            data: saveData,
-            updated_at: new Date().toISOString(),
-          });
+      localStorage.setItem(`cybersharp-save-${this.currentSaveSlot}`, JSON.stringify(saveData));
 
-        if (error) {
-          console.error('Failed to save to Supabase:', error);
-        }
-      }
-
-      console.log('Game saved successfully');
+      console.log(`Game saved to slot ${this.currentSaveSlot}`);
       return true;
     } catch (error) {
       console.error('Failed to save game:', error);
@@ -52,22 +29,15 @@ export class SaveSystem {
 
   async loadGame(slot: number = 1): Promise<SaveData | null> {
     this.currentSaveSlot = slot;
-    const saveKey = `cybersharp-save-${slot}`;
 
     try {
-      if (this.supabase) {
-        const { data, error } = await this.supabase
-          .from('saves')
-          .select('data')
-          .eq('slot', slot)
-          .maybeSingle();
+      const data = await storageAdapter.loadSave(slot);
 
-        if (!error && data) {
-          return data.data as SaveData;
-        }
+      if (data) {
+        return data as SaveData;
       }
 
-      const localSave = localStorage.getItem(saveKey);
+      const localSave = localStorage.getItem(`cybersharp-save-${slot}`);
       if (localSave) {
         return JSON.parse(localSave) as SaveData;
       }
@@ -80,18 +50,10 @@ export class SaveSystem {
   }
 
   async deleteSave(slot: number): Promise<boolean> {
-    const saveKey = `cybersharp-save-${slot}`;
-
     try {
-      localStorage.removeItem(saveKey);
-
-      if (this.supabase) {
-        await this.supabase
-          .from('saves')
-          .delete()
-          .eq('slot', slot);
-      }
-
+      await storageAdapter.deleteSave(slot);
+      localStorage.removeItem(`cybersharp-save-${slot}`);
+      console.log(`Save slot ${slot} deleted`);
       return true;
     } catch (error) {
       console.error('Failed to delete save:', error);
@@ -102,27 +64,47 @@ export class SaveSystem {
   async listSaves(): Promise<SaveSlotInfo[]> {
     const slots: SaveSlotInfo[] = [];
 
-    for (let i = 1; i <= 3; i++) {
-      const saveKey = `cybersharp-save-${i}`;
-      const localSave = localStorage.getItem(saveKey);
+    try {
+      const savedSlots = await storageAdapter.listSaves();
 
-      if (localSave) {
-        try {
-          const data = JSON.parse(localSave) as SaveData;
+      for (const saved of savedSlots) {
+        const data = await storageAdapter.loadSave(saved.slot);
+        if (data) {
+          const saveData = data as SaveData;
           slots.push({
-            slot: i,
-            timestamp: data.timestamp,
-            playerLevel: data.playerStats.level,
-            playtime: data.playtime,
+            slot: saved.slot,
+            timestamp: saved.timestamp,
+            playerLevel: saveData.playerStats.level,
+            playtime: saveData.playtime,
             location: 'Night City',
           });
-        } catch (error) {
-          console.error(`Failed to parse save slot ${i}:`, error);
         }
       }
+
+      for (let i = 1; i <= 3; i++) {
+        if (slots.find(s => s.slot === i)) continue;
+
+        const localSave = localStorage.getItem(`cybersharp-save-${i}`);
+        if (localSave) {
+          try {
+            const data = JSON.parse(localSave) as SaveData;
+            slots.push({
+              slot: i,
+              timestamp: data.timestamp,
+              playerLevel: data.playerStats.level,
+              playtime: data.playtime,
+              location: 'Night City',
+            });
+          } catch (error) {
+            console.error(`Failed to parse save slot ${i}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to list saves:', error);
     }
 
-    return slots;
+    return slots.sort((a, b) => a.slot - b.slot);
   }
 
   setCurrentSlot(slot: number) {
