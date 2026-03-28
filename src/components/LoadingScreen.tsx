@@ -1,132 +1,138 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import '../styles/loading.css';
 
 interface LoadingScreenProps {
   onLoadComplete: () => void;
 }
 
+const TASKS = [
+  'BOOTING NEURAL INTERFACE...',
+  'CALIBRATING OPTICAL IMPLANTS...',
+  'LOADING CITY SECTOR DATA...',
+  'ESTABLISHING NETRUNNER LINK...',
+  'SYNCING CYBERNETIC ENHANCEMENTS...',
+  'LOADING WEAPON MATRICES...',
+  'PATCHING ARASAKA FIREWALL...',
+  'CONNECTING TO NIGHT CITY GRID...',
+  'JACK IN SEQUENCE COMPLETE.',
+];
+
 export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
   const [progress, setProgress] = useState(0);
-  const [currentTask, setCurrentTask] = useState('');
-  const [glitchText, setGlitchText] = useState('CYBERSHARP');
-
-  const loadingTasks = [
-    'INITIALIZING NEURAL INTERFACE',
-    'CONNECTING TO NIGHT CITY GRID',
-    'LOADING WEAPON SYSTEMS',
-    'ESTABLISHING NETRUNNER PROTOCOLS',
-    'SYNCING CYBERNETIC ENHANCEMENTS',
-    'CALIBRATING OPTICS',
-    'LOADING STREET DATA',
-    'ESTABLISHING SECURE CONNECTION',
-    'READY TO JACK IN',
-  ];
+  const [currentTask, setCurrentTask] = useState(TASKS[0]);
+  const [log, setLog] = useState<string[]>([]);
+  const [glitchActive, setGlitchActive] = useState(false);
+  const [time, setTime] = useState('');
+  const completedRef = useRef(false);
 
   useEffect(() => {
-    const taskInterval = setInterval(() => {
+    const tick = () => {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      setTime(`${h}:${m}:${s}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
       setProgress((prev) => {
-        const next = prev + Math.random() * 15;
-        if (next >= 100) {
-          clearInterval(taskInterval);
-          setTimeout(onLoadComplete, 500);
-          return 100;
+        const increment = Math.random() * 12 + 3;
+        const next = Math.min(prev + increment, 100);
+
+        const taskIndex = Math.min(
+          Math.floor((next / 100) * TASKS.length),
+          TASKS.length - 1
+        );
+        const task = TASKS[taskIndex];
+
+        setCurrentTask(task);
+        setLog((prevLog) => {
+          const last = prevLog[prevLog.length - 1];
+          if (last !== task) return [...prevLog.slice(-3), task];
+          return prevLog;
+        });
+
+        if (next >= 100 && !completedRef.current) {
+          completedRef.current = true;
+          clearInterval(interval);
+          setTimeout(onLoadComplete, 600);
         }
+
         return next;
       });
-    }, 300);
+    }, 350);
 
-    return () => clearInterval(taskInterval);
+    return () => clearInterval(interval);
   }, [onLoadComplete]);
 
   useEffect(() => {
-    const taskIndex = Math.floor((progress / 100) * loadingTasks.length);
-    setCurrentTask(loadingTasks[Math.min(taskIndex, loadingTasks.length - 1)]);
-  }, [progress]);
-
-  useEffect(() => {
-    const glitchInterval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        const glitchChars = 'CYBERSHARP'.split('');
-        const randomIndex = Math.floor(Math.random() * glitchChars.length);
-        glitchChars[randomIndex] = String.fromCharCode(33 + Math.floor(Math.random() * 94));
-        setGlitchText(glitchChars.join(''));
-        setTimeout(() => setGlitchText('CYBERSHARP'), 100);
+    const id = setInterval(() => {
+      if (Math.random() > 0.72) {
+        setGlitchActive(true);
+        setTimeout(() => setGlitchActive(false), 120);
       }
-    }, 200);
-
-    return () => clearInterval(glitchInterval);
+    }, 250);
+    return () => clearInterval(id);
   }, []);
 
   return (
-    <div className="loading-screen">
-      <div className="loading-bg">
-        <div className="grid-overlay"></div>
-        <div className="scan-line"></div>
+    <div className="ls-root">
+      <div className="ls-scanline" />
+      <div className="ls-grid" />
+
+      <div className="ls-top-label">NIGHT CITY · 2077</div>
+
+      <div className="ls-center">
+        <div className={`ls-title-wrap${glitchActive ? ' ls-glitch' : ''}`}>
+          <h1 className="ls-title" data-text="CYBERSHARP">CYBERSHARP</h1>
+        </div>
+        <div className="ls-subtitle">PRIME EDITION</div>
+        <div className="ls-tagline">v1.0.0 &nbsp;|&nbsp; ARASAKA BUILD &nbsp;|&nbsp; CLASS-S SYSTEM</div>
+        <div className="ls-dots">
+          <span className="ls-dot" />
+          <span className="ls-dot ls-dot-active" />
+          <span className="ls-dot" />
+        </div>
       </div>
 
-      <div className="loading-content">
-        <div className="logo-container">
-          <div className="logo-glitch">
-            <h1 className="logo-text">{glitchText}</h1>
-            <h1 className="logo-text logo-text-shadow">{glitchText}</h1>
-            <h1 className="logo-text logo-text-shadow2">{glitchText}</h1>
-          </div>
-          <div className="subtitle">PRIME EDITION</div>
-          <div className="tagline">NEURAL INTERFACE v2.077</div>
+      <div className="ls-bottom">
+        <div className="ls-status-line">
+          <span className="ls-prompt">&gt;</span>
+          <span className="ls-status-text">{currentTask}</span>
         </div>
 
-        <div className="loading-bar-container">
-          <div className="loading-bar-outer">
-            <div
-              className="loading-bar-inner"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="loading-bar-glow"></div>
+        <div className="ls-bar-row">
+          <div className="ls-bar-track">
+            <div className="ls-bar-fill" style={{ width: `${progress}%` }} />
+          </div>
+          <span className="ls-pct">{Math.floor(progress)}%</span>
+        </div>
+
+        <div className="ls-log">
+          {log.slice(0, -1).map((entry, i) => (
+            <div key={i} className="ls-log-line">
+              <span className="ls-prompt">&gt;</span>
+              {entry}
             </div>
-            <div className="loading-bar-segments">
-              {Array.from({ length: 20 }).map((_, i) => (
-                <div key={i} className="segment"></div>
-              ))}
-            </div>
-          </div>
-          <div className="loading-percentage">{Math.floor(progress)}%</div>
-        </div>
-
-        <div className="loading-status">
-          <div className="status-indicator">
-            <span className="pulse-dot"></span>
-            <span className="status-text">{currentTask}</span>
-          </div>
-        </div>
-
-        <div className="loading-details">
-          <div className="detail-line">
-            <span className="detail-label">SYSTEM:</span>
-            <span className="detail-value">WEBGPU RENDERER</span>
-          </div>
-          <div className="detail-line">
-            <span className="detail-label">LOCATION:</span>
-            <span className="detail-value">NIGHT CITY SECTOR 7</span>
-          </div>
-          <div className="detail-line">
-            <span className="detail-label">STATUS:</span>
-            <span className="detail-value status-online">ONLINE</span>
-          </div>
-        </div>
-
-        <div className="corner-ornaments">
-          <div className="corner top-left"></div>
-          <div className="corner top-right"></div>
-          <div className="corner bottom-left"></div>
-          <div className="corner bottom-right"></div>
+          ))}
         </div>
       </div>
 
-      <div className="loading-footer">
-        <div className="warning-text">
-          WARNING: UNAUTHORIZED ACCESS DETECTED - SECURITY PROTOCOLS ACTIVE
-        </div>
+      <div className="ls-footer">
+        <span className="ls-footer-left">SYS://CYBERSHARP.PRIME/BOOT</span>
+        <span className="ls-footer-center">{time}</span>
+        <span className="ls-footer-right">NIGHT CITY NEURAL NET v4.2</span>
       </div>
+
+      <div className="ls-corner ls-tl" />
+      <div className="ls-corner ls-tr" />
+      <div className="ls-corner ls-bl" />
+      <div className="ls-corner ls-br" />
     </div>
   );
 }

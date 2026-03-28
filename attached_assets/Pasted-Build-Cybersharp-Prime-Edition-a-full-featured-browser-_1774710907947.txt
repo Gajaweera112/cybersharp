@@ -1,0 +1,250 @@
+Build "Cybersharp Prime Edition" — a full-featured, browser-based cyberpunk action RPG 
+inspired 1:1 by Cyberpunk 2077. The entire stack must use WebGPU for rendering and run 
+on a Node.js server. This is a pixel-perfect visual and functional clone of the source 
+game's UI, HUD, world aesthetic, combat system, and narrative structure — adapted for 
+the browser.
+```
+
+---
+
+## VISUAL IDENTITY — CLONE CYBERPUNK 2077 EXACTLY
+
+```
+COLOR PALETTE:
+  Primary neon   : #FFEF00 (Corpo Yellow)
+  Accent cyan    : #00F5FF (Net Blue)
+  Danger red     : #FF003C (Combat Red)
+  Dark base      : #0A0A0F (Night City Black)
+  Panel bg       : rgba(5, 5, 15, 0.85)
+  Glitch white   : #E8E8E8
+
+TYPOGRAPHY:
+  Headlines      : "Rajdhani" or "Bebas Neue" — ALL CAPS, tracked wide
+  Body/UI        : "Share Tech Mono" — monospace, green tint on dark panels
+  Subtitles      : "Orbitron" — used sparingly for mission titles
+
+VISUAL EFFECTS (implement all in WGSL):
+  - Chromatic aberration shader (RGB channel split on edges)
+  - CRT scanline overlay (subtle, toggleable)
+  - Bloom/glow pass on all neon elements (ping-pong blur + threshold)
+  - Film grain (animated noise texture overlay)
+  - Vignette (radial darkening)
+  - Heat haze / distortion near explosions
+  - Glitch effect: random UV offset blocks on damage hit
+  - Rain streaks (particle system, 2000+ drops, reflective puddles)
+  - Holographic flicker on UI panels (sawtooth alpha animation)
+  - Depth of field (bokeh blur on background when aiming)
+```
+
+---
+
+## HUD — PIXEL-PERFECT CYBERPUNK 2077 CLONE
+
+```
+Implement these HUD elements exactly as in CP2077:
+
+1. MINIMAP (bottom-left)
+   - Circular, rotating with player direction
+   - Neon yellow border with scanline interior
+   - Enemy blips (red triangles), objectives (yellow diamonds)
+   - Street grid procedurally rendered
+
+2. HEALTH BAR (bottom-left, below minimap)
+   - Segmented red bar with "HP" mono label
+   - Flashes white on damage, drains with animation
+   - Armor sub-bar in gray below health
+
+3. STAMINA / OXYGEN
+   - Thin cyan bar, depletes on sprint/swim
+   - Auto-recharges with pulsing animation
+
+4. AMMO COUNTER (bottom-right)
+   - Large numeric display "28 / 90" style
+   - Weapon icon above it
+   - Flashes red on empty
+
+5. MONEY / EDDIES (top-right corner)
+   - ₿ symbol with animated increment/decrement
+
+6. WANTED LEVEL (top-right)
+   - 5-star system using neon triangles
+   - Blinks on active police chase
+
+7. OBJECTIVE TRACKER (top-left)
+   - Mission name in yellow ALL CAPS
+   - Sub-objectives with checkbox UI
+   - Distance indicator in meters
+
+8. INTERACTION PROMPT (center-bottom)
+   - "[E] Interact" style prompts
+   - Circular progress ring on hold-to-use
+
+9. DAMAGE NUMBERS (world-space)
+   - Floating, color-coded (white=normal, yellow=crit, red=headshot)
+   - Scale-in then fade animation
+
+10. DIALOGUE UI
+    - Fullscreen blur overlay
+    - Speaker name in yellow, dialogue in white mono
+    - 4 response choices with [1][2][3][4] keybinds
+    - Relationship/attitude indicator bar
+```
+
+---
+
+## WORLD & ENVIRONMENT
+
+```
+CITY GENERATION:
+  - Procedural Night City district (grid-based blocks)
+  - 5 biomes: Watson (industrial), Heywood (suburbs), Pacifica (ruins), 
+    City Center (corpo towers), Badlands (desert outskirts)
+  - Buildings: modular tile-based facades with neon signage
+  - Street props: dumpsters, vending machines, food stalls, car wrecks
+  - Dynamic NPC spawning (20+ on screen, pooled)
+  - Traffic simulation (lane-following vehicles)
+
+LIGHTING (WebGPU compute shaders):
+  - Deferred rendering pipeline (G-buffer: albedo, normal, depth, emissive)
+  - Point lights per neon sign (up to 256 dynamic lights)
+  - Directional moon + ambient sky light
+  - Shadow maps (cascaded for outdoor, cube for indoor)
+  - Emissive bloom on all neon textures
+  - Wet surface reflections using screen-space reflections (SSR)
+
+WEATHER SYSTEM:
+  - Perpetual light rain (default Night City weather)
+  - Fog depth layer (distance-based scattering in WGSL)
+  - Thunder + lightning (flash + audio sync)
+```
+
+---
+
+## GAMEPLAY SYSTEMS
+
+```
+PLAYER CONTROLLER:
+  - WASD move, Shift sprint, Space jump, Ctrl crouch
+  - Mouse look (pointer lock API)
+  - First-person perspective with viewmodel weapon
+  - Wall-running (detect vertical surfaces via raycast)
+  - Double jump with cyber legs attribute check
+  - Mantling / vaulting (2-step animation)
+
+COMBAT:
+  - Hitscan + projectile hybrid weapons
+  - Weapon categories: pistols, SMGs, rifles, shotguns, snipers, tech weapons
+  - Tech weapons: charge shot mechanic (hold fire = charge = pierce walls)
+  - Smart weapons: tracking projectiles with bezier path rendering
+  - Melee: quick melee (Q key), mantis blades cyberware
+  - Enemy AI: patrol, alert, search, combat states (finite state machine)
+  - Stealth: crouch + noise radius system, enemy vision cones
+
+RPG SYSTEMS:
+  - Attributes: Body, Reflexes, Technical Ability, Intelligence, Cool (5 stats)
+  - 50-level progression, XP per action
+  - Perk tree (branching, 3 tiers per branch)
+  - Street Cred (side reputation 0-50)
+  - Cyberware slots: eyes, hands, legs, nervous system, skeleton, skin
+
+INVENTORY:
+  - Grid-based (Diablo-style) with item weight
+  - Rarity tiers: Common (gray) → Uncommon (green) → Rare (blue) → Epic (purple) → Legendary (orange)
+  - Item inspect: 3D rotating model render
+  - Crafting: combine components + blueprint = new item
+
+ECONOMY:
+  - Eddies (€$) currency
+  - Vendors: weapon shops, ripperdocs (cyberware), clothing, black market
+  - Dynamic pricing (street cred affects vendor prices)
+```
+
+---
+
+## STORY & MISSIONS
+
+```
+NARRATIVE STRUCTURE:
+  - Main questline: 5 acts, 12 main missions
+  - Side gigs: 30+ procedurally parameterized missions (fetch, assassinate, hack, escort)
+  - Fixers: 5 NPC quest givers with relationship meters
+  - Dialogue trees: branching with attribute checks ([BODY 8] Intimidate option)
+  - Multiple endings: determined by final choice matrix
+
+MISSION TYPES:
+  - Assault (clear enemies from location)
+  - Heist (stealth infiltration with optional loud route)
+  - Hacking (breach protocol mini-game)
+  - Racing (vehicle time trial)
+  - Bounty hunting (track target via scanner)
+
+BREACH PROTOCOL MINI-GAME (exact CP2077 clone):
+  - 4x4 or 6x6 hex grid of 2-character codes
+  - Sequence selection: row → column alternating
+  - Daemons to upload: ICEpick, Mass Vulnerability, Datamine
+  - Timer countdown (30 seconds)
+  - Success: hack enemy cybernetics, disable cameras
+```
+
+---
+
+## AUDIO
+
+```
+MUSIC:
+  - Dynamic combat music (calm → alert → intense layers via Web Audio API gain nodes)
+  - Ambient: industrial hum, rain, distant traffic, neon buzz
+  - Genre: synth-wave, industrial techno, hip-hop (procedurally layered)
+
+SFX:
+  - Spatial audio (PannerNode with HRTF)
+  - Weapon: fire, reload, empty click, charge-up
+  - UI: holographic beeps, glitch static, scan confirm
+  - Footsteps: concrete, metal grate, puddle splash (surface detection)
+  - Cyberware: eye zoom whir, blade extend snap
+```
+
+---
+
+## WEBGPU RENDER PIPELINE
+
+```wgsl
+// Implement these render passes in order:
+
+Pass 1: Shadow Map Generation
+  - Render scene depth from sun/moon direction
+  - 2048x2048 depth texture
+
+Pass 2: G-Buffer Pass (Deferred)
+  - Output: albedo (rgba8), normal (rgba16f), depth (r32f), emissive (rgba8)
+  - Vertex shader: MVP transform, UV, normal matrix
+  - Fragment shader: texture sample + normal map
+
+Pass 3: Lighting Pass (Compute)
+  - Read G-buffer textures
+  - Apply directional + 256 point lights
+  - Shadow map lookup with PCF soft shadows
+  - Output: HDR color buffer
+
+Pass 4: SSR (Screen-Space Reflections)
+  - Ray march in screen space using depth buffer
+  - Blend with roughness map
+
+Pass 5: Particle System (Compute)
+  - Rain: 4000 particles, gravity + wind, collision with ground plane
+  - Sparks/muzzle flash: burst emitters
+
+Pass 6: Post-Processing (full-screen quad)
+  - Bloom: threshold extract → dual kawase blur → additive blend
+  - Tone mapping: ACES filmic
+  - Chromatic aberration
+  - Film grain
+  - Vignette
+  - CRT scanlines (optional)
+
+Pass 7: UI Overlay (2D)
+  - Render HUD elements using msdf-bmfont text
+  - Holographic panel shader (flicker + scanline)
+```
+
+---

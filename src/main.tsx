@@ -3,7 +3,6 @@ import './index.css';
 import { Game } from './engine/Game';
 import { createRoot } from 'react-dom/client';
 import { LoadingScreen } from './components/LoadingScreen';
-import { StrictMode } from 'react';
 
 async function init() {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -23,7 +22,6 @@ async function init() {
       const game = new Game(canvas);
       await game.initialize();
       game.start();
-      overlay.innerHTML = '';
     } catch (error) {
       console.error('Failed to initialize game:', error);
       showWebGPUError();
@@ -34,12 +32,10 @@ async function init() {
 function showLoadingScreen(container: HTMLElement, onComplete: () => Promise<void>) {
   const root = createRoot(container);
   root.render(
-    <StrictMode>
-      <LoadingScreen onLoadComplete={async () => {
-        await onComplete();
-        root.unmount();
-      }} />
-    </StrictMode>
+    <LoadingScreen onLoadComplete={async () => {
+      await onComplete();
+      root.unmount();
+    }} />
   );
 }
 
