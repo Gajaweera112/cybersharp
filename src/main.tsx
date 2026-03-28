@@ -1,4 +1,4 @@
-import React from "react";
+import { React } from "react";
 import './index.css';
 import { Game } from './engine/Game';
 import { createRoot } from 'react-dom/client';
