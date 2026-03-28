@@ -1,11 +1,15 @@
 import './index.css';
 import { Game } from './engine/Game';
+import { createRoot } from 'react-dom/client';
+import { LoadingScreen } from './components/LoadingScreen';
+import { StrictMode } from 'react';
 
 async function init() {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+  const overlay = document.getElementById('ui-overlay') as HTMLElement;
 
-  if (!canvas) {
-    throw new Error('Canvas element not found');
+  if (!canvas || !overlay) {
+    throw new Error('Required elements not found');
   }
 
   if (!navigator.gpu) {
@@ -13,14 +17,29 @@ async function init() {
     return;
   }
 
-  try {
-    const game = new Game(canvas);
-    await game.initialize();
-    game.start();
-  } catch (error) {
-    console.error('Failed to initialize game:', error);
-    showWebGPUError();
-  }
+  showLoadingScreen(overlay, async () => {
+    try {
+      const game = new Game(canvas);
+      await game.initialize();
+      game.start();
+      overlay.innerHTML = '';
+    } catch (error) {
+      console.error('Failed to initialize game:', error);
+      showWebGPUError();
+    }
+  });
+}
+
+function showLoadingScreen(container: HTMLElement, onComplete: () => Promise<void>) {
+  const root = createRoot(container);
+  root.render(
+    <StrictMode>
+      <LoadingScreen onLoadComplete={async () => {
+        await onComplete();
+        root.unmount();
+      }} />
+    </StrictMode>
+  );
 }
 
 function showWebGPUError() {
@@ -39,4 +58,6 @@ function showWebGPUError() {
   }
 }
 
-init();
+if (typeof window !== 'undefined') {
+  init();
+}
